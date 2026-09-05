@@ -6,55 +6,55 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## Copayo — Flujo principal\nTelegram Trigger → Notion (buscar síntoma) → IF (¿especialidad encontrada?) → cálculo/redacción → Telegram (respuesta).\n\nCredenciales (Telegram, Notion, Groq) NO vienen incluidas en este export — conéctalas manualmente desde la UI de n8n después de importar (cada nodo quedará marcado como \"issue: no credentials\" hasta que lo hagas).",
-        "height": 260,
-        "width": 460,
+        "content": "## Copayo — Flujo principal\nTelegram Trigger → (guard: ¿es texto?) → Notion (buscar síntoma + extraer plan del mensaje) → IF (¿especialidad Y plan encontrados?) → cálculo/redacción → Telegram (respuesta).\n\nCredenciales (Telegram, Notion, Groq) NO vienen incluidas en este export — conéctalas manualmente desde la UI de n8n después de importar.\n\n**Limitación conocida del MVP:** este workflow NO tiene manejo de sesión/memoria de conversación. Cada mensaje se procesa desde cero; si el paciente responde a una pregunta de aclaración, no hay contexto de la vuelta anterior. Documentado también en README.md.",
+        "height": 300,
+        "width": 480,
         "color": 5
       },
       "id": "d37cd85b-09f9-458f-87d9-1267a87eac94",
       "name": "Sticky Note - General",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [-1220, -420]
+      "position": [-1460, -460]
     },
     {
       "parameters": {
-        "content": "## Regla no negociable\nEl cálculo del copago (costo_base × regla_del_plan) y la comparación de los 3 hospitales con Math.min() se hacen aquí, en JavaScript puro.\n\nGroq NUNCA recalcula ni compara montos — solo recibe este resultado ya calculado y lo redacta en lenguaje natural.",
-        "height": 220,
-        "width": 320,
+        "content": "## Regla no negociable\nEl cálculo del copago (costo_base × valor de la regla del plan) y la comparación de los 3 hospitales con Math.min() se hacen aquí, en JavaScript puro.\n\nGroq NUNCA recalcula ni compara montos — solo recibe este resultado ya calculado y lo redacta en lenguaje natural.\n\nSi falta el dato de la regla del plan (Plan+Especialidad sin match en Notion), este nodo lanza un error explícito — NUNCA asume un valor por defecto. Ese error se maneja como dato incompleto (ver el IF de más abajo).",
+        "height": 260,
+        "width": 340,
         "color": 4
       },
       "id": "b2c45f9b-2094-4f74-aa65-6fed0df47013",
       "name": "Sticky Note - Regla de Cálculo",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [140, -420]
+      "position": [140, -460]
     },
     {
       "parameters": {
-        "content": "## Rama de ambigüedad\nSi no se encontró una especialidad válida en la base \"Síntomas\", Groq NO inventa una — solo interpreta el texto libre del paciente y redacta una pregunta de aclaración.",
+        "content": "## Rama de aclaración (dinámica)\nSi falta la especialidad, el plan, o ambos, Groq NO inventa nada — redacta la pregunta de aclaración según el arreglo `faltantes` que arma \"Function - Evaluar Coincidencia\" (no es un texto fijo: cambia según qué dato falte).",
         "height": 180,
-        "width": 320,
+        "width": 340,
         "color": 3
       },
       "id": "cacc2bdb-07ad-4324-b5a0-50922ef32007",
       "name": "Sticky Note - Rama Ambigua",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [-320, 340]
+      "position": [-320, 380]
     },
     {
       "parameters": {
-        "content": "## Manejo de errores\nSi Notion o Groq fallan o tardan (continueOnFail activado en esos nodos), este IF detecta el error y responde con un mensaje de espera en vez de dejar el chat sin respuesta.\n\nEl Error Trigger de abajo es una red de seguridad adicional a nivel de workflow: alerta al equipo cuando ocurre un fallo crítico no controlado (no le responde al paciente directamente, porque un Error Trigger no tiene el chat_id original disponible).",
-        "height": 260,
-        "width": 340,
+        "content": "## Manejo de errores\nSi Notion o Groq fallan/tardan, o si el cálculo del copago detecta datos incompletos (continueOnFail activado en esos nodos), estos IF lo detectan y responden con un mensaje de espera en vez de dejar el chat sin respuesta.\n\nEl Error Trigger de abajo es una red de seguridad adicional a nivel de workflow: alerta al equipo cuando ocurre un fallo crítico no controlado (no le responde al paciente directamente, porque un Error Trigger no tiene el chat_id original disponible).",
+        "height": 280,
+        "width": 360,
         "color": 2
       },
       "id": "69b4a2fd-0f23-43de-9757-04832c70e874",
       "name": "Sticky Note - Errores",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [600, -420]
+      "position": [600, -460]
     },
     {
       "parameters": {
@@ -67,7 +67,20 @@
       "name": "Sticky Note - Error Trigger",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
-      "position": [-560, 620]
+      "position": [-560, 660]
+    },
+    {
+      "parameters": {
+        "content": "## Guard de tipo de mensaje\nSi llega audio, foto o sticker, `message.text` viene undefined. En vez de romper el flujo sin avisar, se responde pidiendo texto.",
+        "height": 160,
+        "width": 300,
+        "color": 3
+      },
+      "id": "9a333ffb-87d4-4ab1-a009-eb167cd1db11",
+      "name": "Sticky Note - Guard Texto",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-1460, 140]
     },
     {
       "parameters": {
@@ -77,7 +90,49 @@
       "name": "Telegram Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
-      "position": [-1200, 0]
+      "position": [-1440, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "90034130-2d3f-4e93-9a31-51d894c2b6a7",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "edcb9b1f-850e-4eb0-91a1-bb0e22e520ce",
+      "name": "IF - ¿Mensaje es Texto?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-1220, 0],
+      "notes": "Guard barato: si el mensaje no trae texto (audio, foto, sticker...), no sigue al flujo de Notion/Groq."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{\n  json: {\n    mensaje: 'Por ahora solo puedo leer mensajes de texto — ¿me escribes tu síntoma?'\n  }\n}];"
+      },
+      "id": "bbffc3c9-ce2d-43b5-93c3-588c9452213d",
+      "name": "Function - Solo Texto Soportado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1000, 180]
     },
     {
       "parameters": {
@@ -92,7 +147,7 @@
         "filters": {
           "conditions": [
             {
-              "key": "Sintoma|title",
+              "key": "Síntoma|title",
               "condition": "contains",
               "titleValue": "={{ $json.message.text }}"
             }
@@ -106,12 +161,12 @@
       "typeVersion": 2.2,
       "position": [-980, 0],
       "continueOnFail": true,
-      "notes": "Busca el texto del mensaje en la base 'Síntomas' para mapear a una especialidad. databaseId es un placeholder — reemplazar por el ID real de la base en Notion."
+      "notes": "Busca el texto del mensaje en la propiedad 'Síntoma' (title) de la base 'Síntomas' para mapear a 'Especialidad'. databaseId es un placeholder — reemplazar por el ID real de la base en Notion."
     },
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "// Evalúa si la búsqueda en Notion encontró una especialidad válida.\nconst items = $input.all();\nconst huboError = items.some(item => item.json.error);\nconst encontrado = !huboError && items.length > 0;\n\nlet especialidad = null;\nif (encontrado) {\n  const props = items[0].json.properties || {};\n  especialidad = props.Especialidad?.select?.name\n    || props.Especialidad?.rich_text?.[0]?.plain_text\n    || null;\n  encontrado_final = especialidad !== null;\n}\n\nreturn [{\n  json: {\n    especialidadEncontrada: encontrado && especialidad !== null,\n    especialidad,\n    sintomaOriginal: $('Telegram Trigger').item.json.message.text,\n    paso2Error: huboError\n  }\n}];"
+        "jsCode": "// Evalúa si la búsqueda en Notion encontró una especialidad válida\n// Y extrae el plan (Premium/Básico) que el paciente menciona en su propio mensaje.\n// No hay pre-registro de paciente: el plan viene siempre del texto.\nconst items = $input.all();\nconst huboError = items.some(item => item.json.error);\nconst especialidadEncontrada = !huboError && items.length > 0;\n\nlet especialidad = null;\nif (especialidadEncontrada) {\n  const props = items[0].json.properties || {};\n  especialidad = props.Especialidad?.select?.name\n    || props.Especialidad?.rich_text?.[0]?.plain_text\n    || null;\n}\n\nconst sintomaOriginal = $('Telegram Trigger').item.json.message.text;\n\n// Normaliza (minúsculas, sin acentos) para detectar 'premium' / 'basico' sin importar mayúsculas o tildes.\nconst textoNormalizado = (sintomaOriginal || '')\n  .toLowerCase()\n  .normalize('NFD')\n  .replace(/[\\u0300-\\u036f]/g, '');\n\nlet plan = null;\nif (/\\bpremium\\b/.test(textoNormalizado)) {\n  plan = 'Premium';\n} else if (/\\bbasico\\b/.test(textoNormalizado)) {\n  plan = 'Básico';\n}\n\nconst especialidadFinal = especialidad !== null;\nconst planEncontrado = plan !== null;\n\nconst faltantes = [];\nif (!especialidadFinal) faltantes.push('especialidad');\nif (!planEncontrado) faltantes.push('plan');\n\nreturn [{\n  json: {\n    especialidadEncontrada: especialidadFinal,\n    especialidad,\n    planEncontrado,\n    plan,\n    faltantes,\n    sintomaOriginal,\n    paso2Error: huboError\n  }\n}];"
       },
       "id": "dda5879f-141b-460d-a2a5-bfe24793b30a",
       "name": "Function - Evaluar Coincidencia",
@@ -137,6 +192,16 @@
                 "operation": "true",
                 "singleValue": true
               }
+            },
+            {
+              "id": "3b6c1a9e-01f0-4b6a-9d4a-6b1e4f2a9d02",
+              "leftValue": "={{ $json.planEncontrado }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
             }
           ],
           "combinator": "and"
@@ -144,10 +209,11 @@
         "options": {}
       },
       "id": "f09292c9-7565-457e-b2cf-c49fa589d8da",
-      "name": "IF - ¿Especialidad Encontrada?",
+      "name": "IF - ¿Especialidad Y Plan Encontrados?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [-540, 0]
+      "position": [-540, 0],
+      "notes": "Evalúa AMBOS datos, no solo la especialidad. Si falta cualquiera (o ambos), va a la rama de aclaración de Groq."
     },
     {
       "parameters": {
@@ -176,7 +242,7 @@
       "typeVersion": 2.2,
       "position": [-300, -260],
       "continueOnFail": true,
-      "notes": "Trae los hospitales de la red que atienden la especialidad encontrada. databaseId es un placeholder."
+      "notes": "Trae los hospitales (propiedades 'Hospital' y 'Costo base') que atienden la especialidad encontrada. databaseId es un placeholder."
     },
     {
       "parameters": {
@@ -191,11 +257,17 @@
         "filters": {
           "conditions": [
             {
-              "key": "Paciente|rich_text",
+              "key": "Plan|select",
               "condition": "equals",
-              "richTextValue": "={{ $('Telegram Trigger').item.json.message.from.id }}"
+              "selectValue": "={{ $json.plan }}"
+            },
+            {
+              "key": "Especialidad|select",
+              "condition": "equals",
+              "selectValue": "={{ $json.especialidad }}"
             }
-          ]
+          ],
+          "matchType": "allFilters"
         },
         "options": {}
       },
@@ -205,31 +277,51 @@
       "typeVersion": 2.2,
       "position": [-300, -120],
       "continueOnFail": true,
-      "notes": "Trae la regla del plan del paciente (identificado por su Telegram user id, ajustar según cómo se vincule paciente↔plan en Notion). databaseId es un placeholder."
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "combinationMode": "mergeByPosition",
-        "options": {}
-      },
-      "id": "a5468a2b-18c4-483a-b80c-7c635da26380",
-      "name": "Merge - Combinar Hospitales y Plan",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3,
-      "position": [-60, -190]
+      "notes": "Filtra por Plan (extraído del mensaje) + Especialidad (ya encontrada) — NO por ningún ID de paciente, no hay pre-registro. Trae 'Tipo de regla' y 'Valor'. databaseId es un placeholder. Verificar el nombre exacto del operador de filtro combinado ('matchType') contra la versión real del nodo Notion al abrir en la UI."
     },
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "// Cálculo determinístico del copago y comparación de hospitales.\n// Este cálculo se hace EXCLUSIVAMENTE aquí, en JavaScript puro.\n// NUNCA se le pide a Groq (ni a ningún LLM) que calcule o compare montos:\n// un LLM no es confiable para aritmética con dinero real.\n\nconst hospitalesItems = $('Notion - Obtener Hospitales de la Red').all();\nconst planItem = $('Notion - Obtener Regla del Plan').first();\n\nconst reglaDelPlan = planItem?.json?.properties?.ReglaDelPlan?.number ?? 1;\n\nconst hospitales = hospitalesItems.map(item => {\n  const props = item.json.properties || {};\n  const costoBase = props.CostoBase?.number ?? 0;\n  const nombre = props.Nombre?.title?.[0]?.plain_text ?? 'Hospital sin nombre';\n  const copago = costoBase * reglaDelPlan;\n  return { nombre, costoBase, copago };\n});\n\nif (hospitales.length === 0) {\n  throw new Error('No se encontraron hospitales para calcular el copago.');\n}\n\nconst montos = hospitales.map(h => h.copago);\nconst copagoMinimo = Math.min(...montos);\nconst hospitalRecomendado = hospitales.find(h => h.copago === copagoMinimo);\n\nreturn [{\n  json: {\n    especialidad: $('Function - Evaluar Coincidencia').first().json.especialidad,\n    reglaDelPlan,\n    hospitales,\n    hospitalRecomendado,\n    copagoFinal: copagoMinimo\n  }\n}];"
+        "jsCode": "// Cálculo determinístico del copago y comparación de hospitales.\n// Este cálculo se hace EXCLUSIVAMENTE aquí, en JavaScript puro.\n// NUNCA se le pide a Groq (ni a ningún LLM) que calcule o compare montos:\n// un LLM no es confiable para aritmética con dinero real.\n\nconst hospitalesItems = $('Notion - Obtener Hospitales de la Red').all();\nconst planItem = $('Notion - Obtener Regla del Plan').first();\n\nconst planProps = planItem?.json?.properties || {};\nconst tipoDeRegla = planProps['Tipo de regla']?.select?.name\n  ?? planProps['Tipo de regla']?.rich_text?.[0]?.plain_text\n  ?? null;\nconst valorRegla = planProps['Valor']?.number;\n\n// Dato incompleto: NUNCA se asume un valor por defecto para la regla del plan.\n// Se lanza un error explícito, que el IF de más abajo detecta y convierte\n// en el mensaje de espera — no se calcula con un supuesto inventado.\nif (!planItem || typeof valorRegla !== 'number') {\n  throw new Error('No se encontró la regla del plan (Plan + Especialidad) en Notion. Dato incompleto, no se puede calcular el copago sin inventar un valor.');\n}\n\nif (hospitalesItems.length === 0) {\n  throw new Error('No se encontraron hospitales para la especialidad encontrada.');\n}\n\nconst hospitales = hospitalesItems.map(item => {\n  const props = item.json.properties || {};\n  const costoBase = props['Costo base']?.number ?? 0;\n  const nombre = props['Hospital']?.title?.[0]?.plain_text ?? 'Hospital sin nombre';\n  const copago = costoBase * valorRegla;\n  return { nombre, costoBase, copago };\n});\n\nconst montos = hospitales.map(h => h.copago);\nconst copagoMinimo = Math.min(...montos);\nconst hospitalRecomendado = hospitales.find(h => h.copago === copagoMinimo);\n\nreturn [{\n  json: {\n    especialidad: $('Function - Evaluar Coincidencia').first().json.especialidad,\n    plan: $('Function - Evaluar Coincidencia').first().json.plan,\n    tipoDeRegla,\n    valorRegla,\n    hospitales,\n    hospitalRecomendado,\n    copagoFinal: copagoMinimo\n  }\n}];"
       },
       "id": "49dcc634-77bd-42db-8775-cd765bf0ff49",
       "name": "Function - Calcular Copago y Comparar Hospitales",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
+      "position": [-60, -190],
+      "continueOnFail": true,
+      "notes": "Sin nodo Merge de por medio: lee directo con $('Notion - Obtener Hospitales de la Red').all() y $('Notion - Obtener Regla del Plan').first(). Ambos nodos Notion se conectan directo a este Function."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "92fd09dc-8733-45ed-ae9a-2c74b6e4cba9",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "9ebbfc66-7e41-4aa2-9283-9a76ebdb0c3e",
+      "name": "IF - ¿Cálculo Incompleto?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
       "position": [160, -190],
-      "continueOnFail": true
+      "notes": "Si 'Function - Calcular Copago...' lanzó error (plan sin match, u hospitales sin match), va directo al mensaje de espera en vez de llamar a Groq con datos incompletos."
     },
     {
       "parameters": {
@@ -245,14 +337,14 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: \"openai/gpt-oss-120b\", messages: [ { role: \"system\", content: \"[PLACEHOLDER — Euribiades: reemplazar con el system prompt final. Ejemplo temporal: Eres el asistente de Copayo. Recibes datos de copago YA CALCULADOS (especialidad, hospital recomendado, copago final). Redacta una respuesta clara y empática para el paciente en español, mencionando el hospital más económico y el monto exacto. NUNCA recalcules, modifiques ni inventes montos: usa exactamente los que recibes.]\" }, { role: \"user\", content: JSON.stringify($json) } ], temperature: 0.3 }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: \"openai/gpt-oss-120b\", messages: [ { role: \"system\", content: \"[PLACEHOLDER — Euribiades: reemplazar con el system prompt final. Ejemplo temporal: Eres el asistente de Copayo. Recibes datos de copago YA CALCULADOS (especialidad, plan, hospital recomendado, copago final). Redacta una respuesta clara y empática para el paciente en español, mencionando el hospital más económico y el monto exacto. NUNCA recalcules, modifiques ni inventes montos: usa exactamente los que recibes.]\" }, { role: \"user\", content: JSON.stringify($json) } ], temperature: 0.3 }) }}",
         "options": {}
       },
       "id": "0c40548b-52f5-4e59-a8a6-645948694bb4",
       "name": "HTTP Request - Groq (Redactar Respuesta)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [380, -190],
+      "position": [380, -260],
       "continueOnFail": true,
       "notes": "Conectar credencial httpHeaderAuth (Authorization: Bearer <GROQ_API_KEY>) manualmente desde la UI. Groq solo redacta — el copago y el hospital ya vienen calculados en el body."
     },
@@ -270,16 +362,16 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: \"openai/gpt-oss-120b\", messages: [ { role: \"system\", content: \"[PLACEHOLDER — Euribiades: reemplazar con el system prompt final. Ejemplo temporal: Eres el asistente de Copayo. El paciente describió un síntoma que no pudo mapearse a una especialidad conocida. NO inventes una especialidad ni un diagnóstico: redacta una pregunta breve y empática pidiéndole que describa el síntoma con más detalle (por ejemplo, dónde le duele o desde cuándo).]\" }, { role: \"user\", content: \"={{ $json.sintomaOriginal }}\" } ], temperature: 0.3 }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: \"openai/gpt-oss-120b\", messages: [ { role: \"system\", content: \"[PLACEHOLDER — Euribiades: reemplazar con el system prompt final. Ejemplo temporal: Eres el asistente de Copayo. Recibes un objeto con: sintomaOriginal (el texto del paciente), especialidadEncontrada y planEncontrado (booleanos), y faltantes (arreglo con los datos que faltan: 'especialidad' y/o 'plan'). Redacta una pregunta breve y empática pidiendo ESPECÍFICAMENTE los datos que faltan: si falta 'especialidad', pide que describa mejor el síntoma; si falta 'plan', pregunta si tiene plan Premium o Básico; si faltan ambos, pide los dos. NO inventes una especialidad ni asumas un plan por defecto.]\" }, { role: \"user\", content: \"={{ JSON.stringify({ sintomaOriginal: $json.sintomaOriginal, especialidadEncontrada: $json.especialidadEncontrada, planEncontrado: $json.planEncontrado, faltantes: $json.faltantes }) }}\" } ], temperature: 0.3 }) }}",
         "options": {}
       },
       "id": "e8a2dc18-30f9-428e-8cf0-b8968bf7ba06",
       "name": "HTTP Request - Groq (Pedir Aclaración)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [-60, 220],
+      "position": [-300, 320],
       "continueOnFail": true,
-      "notes": "Rama de síntoma ambiguo: Groq solo pide aclaración, no inventa una especialidad. Conectar credencial httpHeaderAuth manualmente."
+      "notes": "Rama de aclaración dinámica: el mensaje que redacta Groq cambia según 'faltantes' (solo síntoma, solo plan, o ambos) — no es un texto fijo. Conectar credencial httpHeaderAuth manualmente."
     },
     {
       "parameters": {
@@ -352,7 +444,7 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [-540, 700]
+      "position": [-540, 740]
     },
     {
       "parameters": {
@@ -363,7 +455,7 @@
       "name": "Function - Preparar Alerta de Fallo Crítico",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-300, 700]
+      "position": [-300, 740]
     },
     {
       "parameters": {
@@ -375,21 +467,30 @@
       "name": "Telegram - Alertar al Equipo",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [-60, 700],
+      "position": [-60, 740],
       "notes": "Notifica al equipo (no al paciente) ante un fallo crítico del workflow. Reemplazar chatId por el chat_id del grupo/admin del equipo."
     }
   ],
   "connections": {
     "Telegram Trigger": {
-      "main": [[{ "node": "Notion - Buscar Síntoma", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "IF - ¿Mensaje es Texto?", "type": "main", "index": 0 }]]
+    },
+    "IF - ¿Mensaje es Texto?": {
+      "main": [
+        [{ "node": "Notion - Buscar Síntoma", "type": "main", "index": 0 }],
+        [{ "node": "Function - Solo Texto Soportado", "type": "main", "index": 0 }]
+      ]
+    },
+    "Function - Solo Texto Soportado": {
+      "main": [[{ "node": "Telegram - Responder al Paciente", "type": "main", "index": 0 }]]
     },
     "Notion - Buscar Síntoma": {
       "main": [[{ "node": "Function - Evaluar Coincidencia", "type": "main", "index": 0 }]]
     },
     "Function - Evaluar Coincidencia": {
-      "main": [[{ "node": "IF - ¿Especialidad Encontrada?", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "IF - ¿Especialidad Y Plan Encontrados?", "type": "main", "index": 0 }]]
     },
-    "IF - ¿Especialidad Encontrada?": {
+    "IF - ¿Especialidad Y Plan Encontrados?": {
       "main": [
         [
           { "node": "Notion - Obtener Hospitales de la Red", "type": "main", "index": 0 },
@@ -401,16 +502,19 @@
       ]
     },
     "Notion - Obtener Hospitales de la Red": {
-      "main": [[{ "node": "Merge - Combinar Hospitales y Plan", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Function - Calcular Copago y Comparar Hospitales", "type": "main", "index": 0 }]]
     },
     "Notion - Obtener Regla del Plan": {
-      "main": [[{ "node": "Merge - Combinar Hospitales y Plan", "type": "main", "index": 1 }]]
-    },
-    "Merge - Combinar Hospitales y Plan": {
       "main": [[{ "node": "Function - Calcular Copago y Comparar Hospitales", "type": "main", "index": 0 }]]
     },
     "Function - Calcular Copago y Comparar Hospitales": {
-      "main": [[{ "node": "HTTP Request - Groq (Redactar Respuesta)", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "IF - ¿Cálculo Incompleto?", "type": "main", "index": 0 }]]
+    },
+    "IF - ¿Cálculo Incompleto?": {
+      "main": [
+        [{ "node": "Function - Mensaje de Espera (Fallback)", "type": "main", "index": 0 }],
+        [{ "node": "HTTP Request - Groq (Redactar Respuesta)", "type": "main", "index": 0 }]
+      ]
     },
     "HTTP Request - Groq (Redactar Respuesta)": {
       "main": [[{ "node": "IF - ¿Falló Notion o Groq?", "type": "main", "index": 0 }]]
