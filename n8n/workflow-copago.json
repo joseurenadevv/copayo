@@ -242,7 +242,8 @@
       "typeVersion": 2.2,
       "position": [-300, -260],
       "continueOnFail": true,
-      "notes": "Trae los hospitales (propiedades 'Hospital' y 'Costo base') que atienden la especialidad encontrada. databaseId es un placeholder."
+      "alwaysOutputData": true,
+      "notes": "Trae los hospitales (propiedades 'Hospital' y 'Costo base') que atienden la especialidad encontrada. databaseId es un placeholder. alwaysOutputData=true: si no hay match, igual entrega 1 item vacío (json:{}) para que el Merge/Function se disparen — el Function filtra ese item vacío por 'properties' antes de calcular."
     },
     {
       "parameters": {
@@ -277,20 +278,33 @@
       "typeVersion": 2.2,
       "position": [-300, -120],
       "continueOnFail": true,
-      "notes": "Filtra por Plan (extraído del mensaje) + Especialidad (ya encontrada) — NO por ningún ID de paciente, no hay pre-registro. Trae 'Tipo de regla' y 'Valor'. databaseId es un placeholder. Verificar el nombre exacto del operador de filtro combinado ('matchType') contra la versión real del nodo Notion al abrir en la UI."
+      "alwaysOutputData": true,
+      "notes": "Filtra por Plan (extraído del mensaje) + Especialidad (ya encontrada) — NO por ningún ID de paciente, no hay pre-registro. Trae 'Tipo de regla' y 'Valor'. databaseId es un placeholder. Verificar el nombre exacto del operador de filtro combinado ('matchType') contra la versión real del nodo Notion al abrir en la UI. alwaysOutputData=true: si no hay match, igual entrega 1 item vacío (json:{}) para que el Merge/Function se disparen — el Function detecta ese caso porque 'Valor' no será un number."
+    },
+    {
+      "parameters": {
+        "mode": "append",
+        "options": {}
+      },
+      "id": "1f4a8b2c-6d3e-4a9f-b7c1-2e5d8a0f3c6b",
+      "name": "Merge - Combinar Hospitales y Plan",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [-180, -190],
+      "notes": "Modo 'Append': espera a que AMBAS ramas (Hospitales y Regla del Plan) terminen antes de disparar el Function una sola vez. No se usa para el contenido de los datos (el Function sigue leyendo por expresión $('Node').first()) — solo para sincronización."
     },
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "// Cálculo determinístico del copago y comparación de hospitales.\n// Este cálculo se hace EXCLUSIVAMENTE aquí, en JavaScript puro.\n// NUNCA se le pide a Groq (ni a ningún LLM) que calcule o compare montos:\n// un LLM no es confiable para aritmética con dinero real.\n\nconst hospitalesItems = $('Notion - Obtener Hospitales de la Red').all();\nconst planItem = $('Notion - Obtener Regla del Plan').first();\n\nconst planProps = planItem?.json?.properties || {};\nconst tipoDeRegla = planProps['Tipo de regla']?.select?.name\n  ?? planProps['Tipo de regla']?.rich_text?.[0]?.plain_text\n  ?? null;\nconst valorRegla = planProps['Valor']?.number;\n\n// Dato incompleto: NUNCA se asume un valor por defecto para la regla del plan.\n// Se lanza un error explícito, que el IF de más abajo detecta y convierte\n// en el mensaje de espera — no se calcula con un supuesto inventado.\nif (!planItem || typeof valorRegla !== 'number') {\n  throw new Error('No se encontró la regla del plan (Plan + Especialidad) en Notion. Dato incompleto, no se puede calcular el copago sin inventar un valor.');\n}\n\nif (hospitalesItems.length === 0) {\n  throw new Error('No se encontraron hospitales para la especialidad encontrada.');\n}\n\nconst hospitales = hospitalesItems.map(item => {\n  const props = item.json.properties || {};\n  const costoBase = props['Costo base']?.number ?? 0;\n  const nombre = props['Hospital']?.title?.[0]?.plain_text ?? 'Hospital sin nombre';\n  const copago = costoBase * valorRegla;\n  return { nombre, costoBase, copago };\n});\n\nconst montos = hospitales.map(h => h.copago);\nconst copagoMinimo = Math.min(...montos);\nconst hospitalRecomendado = hospitales.find(h => h.copago === copagoMinimo);\n\nreturn [{\n  json: {\n    especialidad: $('Function - Evaluar Coincidencia').first().json.especialidad,\n    plan: $('Function - Evaluar Coincidencia').first().json.plan,\n    tipoDeRegla,\n    valorRegla,\n    hospitales,\n    hospitalRecomendado,\n    copagoFinal: copagoMinimo\n  }\n}];"
+        "jsCode": "// Cálculo determinístico del copago y comparación de hospitales.\n// Este cálculo se hace EXCLUSIVAMENTE aquí, en JavaScript puro.\n// NUNCA se le pide a Groq (ni a ningún LLM) que calcule o compare montos:\n// un LLM no es confiable para aritmética con dinero real.\n\n// Ambos nodos Notion tienen alwaysOutputData=true: si no hubo match,\n// igual entregan 1 item con json:{} (sin 'properties') solo para que\n// el Merge/este Function se disparen. Por eso se filtran esos items\n// vacíos antes de contar/calcular, en vez de confiar en el length crudo.\nconst hospitalesItems = $('Notion - Obtener Hospitales de la Red').all()\n  .filter(item => item.json && item.json.properties);\nconst planItem = $('Notion - Obtener Regla del Plan').first();\n\nconst planProps = planItem?.json?.properties || {};\nconst tipoDeRegla = planProps['Tipo de regla']?.select?.name\n  ?? planProps['Tipo de regla']?.rich_text?.[0]?.plain_text\n  ?? null;\nconst valorRegla = planProps['Valor']?.number;\n\n// Dato incompleto: NUNCA se asume un valor por defecto para la regla del plan.\n// Se lanza un error explícito, que el IF de más abajo detecta y convierte\n// en el mensaje de espera — no se calcula con un supuesto inventado.\nif (typeof valorRegla !== 'number') {\n  throw new Error('No se encontró la regla del plan (Plan + Especialidad) en Notion. Dato incompleto, no se puede calcular el copago sin inventar un valor.');\n}\n\nif (hospitalesItems.length === 0) {\n  throw new Error('No se encontraron hospitales para la especialidad encontrada.');\n}\n\nconst hospitales = hospitalesItems.map(item => {\n  const props = item.json.properties || {};\n  const costoBase = props['Costo base']?.number ?? 0;\n  const nombre = props['Hospital']?.title?.[0]?.plain_text ?? 'Hospital sin nombre';\n  const copago = costoBase * valorRegla;\n  return { nombre, costoBase, copago };\n});\n\nconst montos = hospitales.map(h => h.copago);\nconst copagoMinimo = Math.min(...montos);\nconst hospitalRecomendado = hospitales.find(h => h.copago === copagoMinimo);\n\nreturn [{\n  json: {\n    especialidad: $('Function - Evaluar Coincidencia').first().json.especialidad,\n    plan: $('Function - Evaluar Coincidencia').first().json.plan,\n    tipoDeRegla,\n    valorRegla,\n    hospitales,\n    hospitalRecomendado,\n    copagoFinal: copagoMinimo\n  }\n}];"
       },
       "id": "49dcc634-77bd-42db-8775-cd765bf0ff49",
       "name": "Function - Calcular Copago y Comparar Hospitales",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-60, -190],
+      "position": [40, -190],
       "continueOnFail": true,
-      "notes": "Sin nodo Merge de por medio: lee directo con $('Notion - Obtener Hospitales de la Red').all() y $('Notion - Obtener Regla del Plan').first(). Ambos nodos Notion se conectan directo a este Function."
+      "notes": "El Merge de la izquierda solo sincroniza (espera ambas ramas); este Function sigue leyendo los datos por expresión: $('Notion - Obtener Hospitales de la Red').all() y $('Notion - Obtener Regla del Plan').first()."
     },
     {
       "parameters": {
@@ -320,7 +334,7 @@
       "name": "IF - ¿Cálculo Incompleto?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [160, -190],
+      "position": [260, -190],
       "notes": "Si 'Function - Calcular Copago...' lanzó error (plan sin match, u hospitales sin match), va directo al mensaje de espera en vez de llamar a Groq con datos incompletos."
     },
     {
@@ -344,7 +358,7 @@
       "name": "HTTP Request - Groq (Redactar Respuesta)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [380, -260],
+      "position": [480, -260],
       "continueOnFail": true,
       "notes": "Conectar credencial httpHeaderAuth (Authorization: Bearer <GROQ_API_KEY>) manualmente desde la UI. Groq solo redacta — el copago y el hospital ya vienen calculados en el body."
     },
@@ -502,9 +516,12 @@
       ]
     },
     "Notion - Obtener Hospitales de la Red": {
-      "main": [[{ "node": "Function - Calcular Copago y Comparar Hospitales", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Merge - Combinar Hospitales y Plan", "type": "main", "index": 0 }]]
     },
     "Notion - Obtener Regla del Plan": {
+      "main": [[{ "node": "Merge - Combinar Hospitales y Plan", "type": "main", "index": 1 }]]
+    },
+    "Merge - Combinar Hospitales y Plan": {
       "main": [[{ "node": "Function - Calcular Copago y Comparar Hospitales", "type": "main", "index": 0 }]]
     },
     "Function - Calcular Copago y Comparar Hospitales": {
