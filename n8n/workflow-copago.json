@@ -161,7 +161,8 @@
       "typeVersion": 2.2,
       "position": [-980, 0],
       "continueOnFail": true,
-      "notes": "Busca el texto del mensaje en la propiedad 'Síntoma' (title) de la base 'Síntomas' para mapear a 'Especialidad'. databaseId es un placeholder — reemplazar por el ID real de la base en Notion."
+      "alwaysOutputData": true,
+      "notes": "Busca el texto del mensaje en la propiedad 'Síntoma' (title) de la base 'Síntomas' para mapear a 'Especialidad'. databaseId es un placeholder — reemplazar por el ID real de la base en Notion. alwaysOutputData=true: si no hay match (síntoma fuera de las especialidades del MVP), igual entrega 1 item vacío (json:{}) para que 'Function - Evaluar Coincidencia' se dispare y el flujo llegue a la rama de aclaración — sin esto, 0 items corta la cadena y el paciente se queda sin respuesta."
     },
     {
       "parameters": {
@@ -376,7 +377,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: \"openai/gpt-oss-120b\", messages: [ { role: \"system\", content: \"[PLACEHOLDER — Euribiades: reemplazar con el system prompt final. Ejemplo temporal: Eres el asistente de Copayo. Recibes un objeto con: sintomaOriginal (el texto del paciente), especialidadEncontrada y planEncontrado (booleanos), y faltantes (arreglo con los datos que faltan: 'especialidad' y/o 'plan'). Redacta una pregunta breve y empática pidiendo ESPECÍFICAMENTE los datos que faltan: si falta 'especialidad', pide que describa mejor el síntoma; si falta 'plan', pregunta si tiene plan Premium o Básico; si faltan ambos, pide los dos. NO inventes una especialidad ni asumas un plan por defecto.]\" }, { role: \"user\", content: \"={{ JSON.stringify({ sintomaOriginal: $json.sintomaOriginal, especialidadEncontrada: $json.especialidadEncontrada, planEncontrado: $json.planEncontrado, faltantes: $json.faltantes }) }}\" } ], temperature: 0.3 }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: \"openai/gpt-oss-120b\", messages: [ { role: \"system\", content: \"[PLACEHOLDER — Euribiades: reemplazar con el system prompt final. Ejemplo temporal: Eres el asistente de Copayo. Recibes un objeto con: sintomaOriginal (el texto del paciente), especialidadEncontrada y planEncontrado (booleanos), y faltantes (arreglo con los datos que faltan: 'especialidad' y/o 'plan'). Redacta una pregunta breve y empática pidiendo ESPECÍFICAMENTE los datos que faltan: si falta 'especialidad', pide que describa mejor el síntoma; si falta 'plan', pregunta si tiene plan Premium o Básico; si faltan ambos, pide los dos. NO inventes una especialidad ni asumas un plan por defecto.]\" }, { role: \"user\", content: JSON.stringify({ sintomaOriginal: $json.sintomaOriginal, especialidadEncontrada: $json.especialidadEncontrada, planEncontrado: $json.planEncontrado, faltantes: $json.faltantes }) } ], temperature: 0.3 }) }}",
         "options": {}
       },
       "id": "e8a2dc18-30f9-428e-8cf0-b8968bf7ba06",
@@ -385,7 +386,7 @@
       "typeVersion": 4.2,
       "position": [-300, 320],
       "continueOnFail": true,
-      "notes": "Rama de aclaración dinámica: el mensaje que redacta Groq cambia según 'faltantes' (solo síntoma, solo plan, o ambos) — no es un texto fijo. Conectar credencial httpHeaderAuth manualmente."
+      "notes": "Rama de aclaración dinámica: el mensaje que redacta Groq cambia según 'faltantes' (solo síntoma, solo plan, o ambos) — no es un texto fijo. Conectar credencial httpHeaderAuth manualmente. El campo 'content' del mensaje user es JSON.stringify(...) directo (sin '={{ }}' anidado) — todo el jsonBody ya es una sola expresión de n8n; una expresión anidada adentro rompe el parser con 'invalid syntax'."
     },
     {
       "parameters": {
