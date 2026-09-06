@@ -27,17 +27,27 @@ Estos casos verifican la clasificación del síntoma, la selección del hospital
 | 2 | “Tengo fiebre alta, mi plan es Premium” | Medicina General → Hospital B → $0 |
 | 3 | “Tengo dolor abdominal y plan Básico” | Gastroenterología → Hospital B → $45 |
 | 4 | “Me duele el abdomen, tengo plan Premium” | Gastroenterología → Hospital B → $30 |
-| 5 | “Me duele el pecho y tengo plan Básico” | Cardiología → Hospital A → $75 |
-| 6 | “Tengo dolor de pecho, mi plan es Premium” | Cardiología → Hospital A → $30 |
+| 5 | “Me duele el pecho y tengo plan Básico” | Cardiología → Hospital B → $65 |
+| 6 | “Tengo dolor de pecho, mi plan es Premium” | Cardiología → Hospital B → $30 |
 | 7 | “Tuve una fractura fuerte y tengo plan Básico” | Traumatología → Hospital B → $55 |
 | 8 | “Me caí y el hueso se ve raro, tengo plan Premium” | Traumatología → Hospital B → $30 |
-| 9 | “Tengo dificultad para respirar y plan Básico” | Neumología → Hospital A → $65 |
-| 10 | “Me cuesta respirar, tengo plan Premium” | Neumología → Hospital A → $30 |
-| 11 | “Tengo punzadas fuertes en el corazón y plan Básico” | Cardiología → Hospital A → $75 |
+| 9 | “Tengo dificultad para respirar y plan Básico” | Neumología → Hospital B → $57.50 |
+| 10 | “Me cuesta respirar, tengo plan Premium” | Neumología → Hospital B → $30 |
+| 11 | “Tengo punzadas fuertes en el corazón y plan Básico” | Cardiología → Hospital B → $65 |
 | 12 | “Me caí muy fuerte y creo que me fracturé, tengo plan Premium” | Traumatología → Hospital B → $30 |
 | 13 | “Me duele el pecho” | **Falta plan → pedir aclaración; no consultar hospitales ni calcular** |
 | 14 | “Me siento mal y muy cansado, tengo plan Básico” | **Especialidad no determinada → pedir más información; no consultar hospitales ni calcular** |
 | 15 | “Me siento mal” | **Faltan plan y especialidad → pedir ambos datos; no consultar hospitales ni calcular** |
+
+> **Nota sobre el hospital ganador (correcto por diseño, no un error de datos).**
+> Con los costos base reales cargados en Notion, **Hospital B es el más económico en
+> las 5 especialidades**. En particular gana en Cardiología (130 vs. 150 de Hospital A)
+> y en Neumología (115 vs. 130 de Hospital A). Versiones anteriores de estos casos
+> asumían que Hospital A ganaba en Cardiología y Neumología; esa expectativa se
+> corrigió en los casos 5, 6, 9, 10 y 11 para reflejar los precios reales. Los montos
+> de copago derivan de esos costos: Cardiología Básico = 50 % de 130 = $65;
+> Neumología Básico = 50 % de 115 = $57.50. Ver la tabla de datos en
+> [notion/schema.md](../notion/schema.md).
 
 ## Casos ambiguos y falta de información
 
