@@ -27,22 +27,24 @@ Estos casos verifican la clasificación del síntoma, la selección del hospital
 | 2 | “Tengo fiebre alta, mi plan es Premium” | Medicina General → Hospital B → $0 | ✅ Verificado en producción (2026-09-06) |
 | 3 | “Tengo dolor abdominal y plan Básico” | Gastroenterología → Hospital B → $45 | — |
 | 4 | “Me duele el abdomen, tengo plan Premium” | Gastroenterología → Hospital B → $30 | ✅ Verificado en producción (2026-09-06) |
-| 5 | “Me duele el pecho y tengo plan Básico” | Cardiología → Hospital B → $65 | ✅ Verificado en producción (2026-09-06) |
+| 5 | “Me duele el pecho y tengo plan Básico” | **Activa protocolo de EMERGENCIA en la mayoría de las corridas (~92% medido).** En el resto (~8%) devuelve Cardiología → Hospital B → $65. La detección de emergencia para síntomas torácicos/respiratorios es probabilística por diseño del modelo (temperature 0.3 en Groq) — no se ajustó porque priorizar la alerta de emergencia sobre el cálculo de copago es el comportamiento más seguro para el paciente. | ✅ Verificado en producción (2026-09-06); comportamiento no determinístico medido en múltiples corridas |
 | 6 | “Tengo dolor de pecho, mi plan es Premium” | Cardiología → Hospital B → $30 | — |
 | 7 | “Tuve una fractura fuerte y tengo plan Básico” | Traumatología → Hospital B → $55 | ✅ Verificado en producción (2026-09-06) |
 | 8 | “Me caí y el hueso se ve raro, tengo plan Premium” | Traumatología → Hospital B → $30 | ✅ Verificado en producción (2026-09-06) |
 | 9 | “Tengo dificultad para respirar y plan Básico” | **Activa protocolo de EMERGENCIA** — comportamiento correcto: prioriza la seguridad sobre el cálculo de copago ante dificultad respiratoria | ✅ Verificado en producción (2026-09-06) |
 | 10 | “Me cuesta respirar, tengo plan Premium” | **Activa protocolo de EMERGENCIA** — mismo comportamiento que el caso 9 | ✅ Verificado en producción (2026-09-06) |
-| 11 | “Tengo punzadas fuertes en el corazón y plan Básico” | **Activa protocolo de EMERGENCIA** — ver nota abajo: el caso 5, misma especialidad y plan, sí devuelve el copago normal | ✅ Verificado en producción (2026-09-06) |
+| 11 | “Tengo punzadas fuertes en el corazón y plan Básico” | **Activa protocolo de EMERGENCIA** — ver nota abajo: el disparo depende de qué tan alarmante suena la frase, no solo de la especialidad | ✅ Verificado en producción (2026-09-06) |
 | 12 | “Me caí muy fuerte y creo que me fracturé, tengo plan Premium” | Traumatología → Hospital B → $30 | ✅ Verificado en producción (2026-09-06) |
 | 13 | “Me duele el pecho” | **Falta plan → pedir aclaración; no consultar hospitales ni calcular** | — |
 | 14 | “Me siento mal y muy cansado, tengo plan Básico” | **Especialidad no determinada → pedir más información; no consultar hospitales ni calcular** | — |
 | 15 | “Me siento mal” | **Faltan plan y especialidad → pedir ambos datos; no consultar hospitales ni calcular** | — |
 
 Los 9 casos marcados como verificados fueron ejecutados manualmente contra el bot en
-producción por Yassell el 2026-09-06. Los casos 2, 4, 5, 7, 8 y 12 coincidieron con el
+producción por Yassell el 2026-09-06. Los casos 2, 4, 7, 8 y 12 coincidieron con el
 resultado esperado; los casos 9, 10 y 11 cambiaron de resultado esperado según la
-evidencia real (ver más abajo).
+evidencia real (ver más abajo); el caso 5 resultó ser no determinístico (dispara
+emergencia en ~92% de las corridas — ver su fila y la nota sobre Neumología y
+emergencia más abajo).
 
 > **Nota sobre el hospital ganador (correcto por diseño, no un error de datos).**
 > Con los costos base reales cargados en Notion, **Hospital B es el más económico en
@@ -50,27 +52,35 @@ evidencia real (ver más abajo).
 > y en Neumología (115 vs. 130 de Hospital A). Versiones anteriores de estos casos
 > asumían que Hospital A ganaba en Cardiología y Neumología; esa expectativa se
 > corrigió en los casos 5, 6, 9, 10 y 11 para reflejar los precios reales. Los montos
-> de copago derivan de esos costos: Cardiología Básico = 50 % de 130 = $65
-> (confirmado en producción por el caso 5); Neumología Básico = 50 % de 115 = $57.50.
-> Ver la tabla de datos en [notion/schema.md](../notion/schema.md).
+> de copago derivan de esos costos: Cardiología Básico = 50 % de 130 = $65;
+> Neumología Básico = 50 % de 115 = $57.50. El caso 5 (Cardiología Básico) dispara
+> emergencia en ~92% de las corridas, así que la ruta de copago de Cardiología se
+> ilustra con el caso 6 (mismo síntoma, plan Premium → $30 fijo). Ver la tabla de
+> datos en [notion/schema.md](../notion/schema.md).
 
 ### Nota sobre Neumología y el protocolo de emergencia
 
 Verificado el 2026-09-06 contra el bot en producción por Yassell:
 
 - La **única frase de síntoma del sistema para Neumología es "dificultad respiratoria"**,
-  y esa frase **dispara el protocolo de emergencia siempre**: el modelo prioriza
-  indicar atención de urgencia sobre calcular el copago. Los casos 9 y 10 lo confirman.
+  y esa frase **dispara el protocolo de emergencia de forma consistente** en las
+  pruebas: el modelo prioriza indicar atención de urgencia sobre calcular el copago.
+  Los casos 9 y 10 lo confirman. (El disparo es probabilístico como todo lo del
+  modelo, pero para frases de dificultad respiratoria no se observó ninguna corrida
+  que cayera al cálculo de copago.)
 - En consecuencia, **el flujo de copago normal para Neumología no tiene ningún caso de
   prueba que lo demuestre de punta a punta**. Es una limitación conocida del set de
   pruebas, no un bug: el cálculo determinístico para Neumología (50 % de 115 = $57.50
   en Básico, $30 en Premium) sigue existiendo en el workflow; simplemente ninguna
   entrada realista lo alcanza, porque toda mención de dificultad para respirar se
   trata como posible emergencia.
-- El disparo de emergencia **depende de qué tan alarmante suena la frase exacta, no
-  solo de la especialidad**: el caso 11 ("punzadas fuertes en el corazón") dispara
-  emergencia, mientras que el caso 5 ("me duele el pecho") — misma especialidad
-  (Cardiología) y mismo plan (Básico) — sí devuelve el copago normal de $65.
+- El disparo de emergencia **depende de qué tan alarmante suena la frase exacta, y es
+  probabilístico** (Groq corre con temperature 0.3): el caso 11 ("punzadas fuertes en
+  el corazón") dispara emergencia de forma consistente; el caso 5 ("me duele el pecho")
+  — misma especialidad (Cardiología) y mismo plan (Básico) — dispara emergencia en
+  ~92% de las corridas y devuelve el copago normal de $65 en el ~8% restante. No se
+  ajustó el prompt para forzar determinismo: preferir un falso positivo de emergencia
+  sobre un falso negativo es el comportamiento más seguro para el paciente.
 
 ## Casos ambiguos y falta de información
 
