@@ -33,7 +33,7 @@ Estos casos verifican la clasificación del síntoma, la selección del hospital
 | 8 | “Me caí y el hueso se ve raro, tengo plan Premium” | Traumatología → Hospital B → $30 | ✅ Verificado en producción (2026-09-06) |
 | 9 | “Tengo dificultad para respirar y plan Básico” | **Activa protocolo de EMERGENCIA** — comportamiento correcto: prioriza la seguridad sobre el cálculo de copago ante dificultad respiratoria | ✅ Verificado en producción (2026-09-06, backup sin memoria de sesión) |
 | 10 | “Me cuesta respirar, tengo plan Premium” | **Activa protocolo de EMERGENCIA** — mismo comportamiento que el caso 9 | ✅ Verificado en producción (2026-09-06, backup sin memoria de sesión) |
-| 11 | “Tengo punzadas fuertes en el corazón y plan Básico” | **Activa protocolo de EMERGENCIA** — ver nota abajo: el disparo depende de qué tan alarmante suena la frase, no solo de la especialidad | ✅ Verificado en producción (2026-09-06) |
+| 11 | “Tengo punzadas fuertes en el corazón y plan Básico” | **Activa protocolo de EMERGENCIA** — ver nota abajo: el disparo depende de qué tan alarmante suena la frase, no solo de la especialidad | ✅ Verificado en producción (2026-09-06, backup sin memoria de sesión) |
 | 12 | “Me caí muy fuerte y creo que me fracturé, tengo plan Premium” | Traumatología → Hospital B → $30 | ✅ Verificado en producción (2026-09-06) |
 | 13 | “Me duele el pecho” | **Falta plan → pedir aclaración; no consultar hospitales ni calcular** | — |
 | 14 | “Me siento mal y muy cansado, tengo plan Básico” | **Especialidad no determinada → pedir más información; no consultar hospitales ni calcular** | — |
