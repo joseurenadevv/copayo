@@ -49,7 +49,7 @@ Con los costos base reales, **Hospital B es el más económico en las 5 especial
 
 ### Limitaciones conocidas del MVP
 
-- Sin sesión ni memoria de conversación: cada mensaje se procesa desde cero. Si el bot pide una aclaración (falta especialidad o plan) y el paciente responde en un mensaje nuevo, esa respuesta se procesa como una consulta independiente, sin recordar la pregunta anterior. Es una decisión de scope, no un bug pendiente.
+- Sin sesión ni memoria de conversación: cada mensaje se procesa desde cero. Si el bot pide una aclaración (falta especialidad o plan) y el paciente responde en un mensaje nuevo, esa respuesta se procesa como una consulta independiente, sin recordar la pregunta anterior. Es una decisión de scope, no un bug pendiente. (Se intentó implementar sesión con memoria el 2026-09-06; se revirtió por un hallazgo de seguridad en el flujo de emergencia — ver `HALLAZGO-5b-bug-estructural.md` en el Escritorio, no incluido en este repo.)
 - No hace diagnóstico médico: solo clasifica dentro del conjunto de casos contemplados.
 - Ante un síntoma ambiguo o fuera de alcance, el sistema pide más información o informa que no puede procesar el caso, en lugar de inventar una especialidad, hospital o costo.
 

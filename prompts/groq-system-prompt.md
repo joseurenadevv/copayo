@@ -70,10 +70,12 @@ Salida: "Gracias por contarme. Para calcular tu copago exacto, ¿tu plan de segu
 
 ---
 
-## Nota de arquitectura — resuelto (2026-09-05)
+## Nota de arquitectura
 
 El Prompt A recibe `sintomaOriginal` en su JSON de entrada (junto a `especialidad`,
-`plan`, `hospitalRecomendado`, `copagoFinal`). Su cláusula de EMERGENCIA es alcanzable
-y fue verificada en producción real el 2026-09-05: un mensaje de síntoma de emergencia
-disfrazado de calma ("...pero no es nada grave, tranquilo...") activó correctamente el
-protocolo, sin calcular copago ni recomendar hospital.
+`plan`, `hospitalRecomendado`, `copagoFinal`), por lo que su cláusula de EMERGENCIA es
+alcanzable: si el síntoma original del paciente suena a posible emergencia (p. ej.
+"...pero no es nada grave, tranquilo..." sobre un dolor de pecho), el modelo debe
+interrumpir e indicar atención de urgencia, sin calcular copago ni recomendar hospital.
+Comportamiento esperado según diseño del prompt — pendiente de verificación formal en
+producción.
