@@ -8,12 +8,11 @@ pega el JSON de la fila **tal cual**, sin texto alrededor.
 Fuente: página de Notion "🤖 Prompts de Groq v2 (corregidos) + Guía de Pruebas".
 
 > Nota: estos ejemplos ejercitan el **comportamiento del LLM** (que no recalcule, que
-> no redondee, que priorice emergencia, que no alucine contexto). Los valores de
-> `hospitalRecomendado` / `copagoFinal` de algunas filas provienen de la versión vieja
-> de datos y no coinciden con el ganador real por especialidad — las expectativas
-> autoritativas de hospital y copago están en
-> [docs/casos-de-prueba.md](../docs/casos-de-prueba.md). Para probar el prompt no
-> importa el valor exacto, importa que el modelo lo comunique sin alterarlo.
+> no redondee, que priorice emergencia, que no alucine contexto), no la selección de
+> hospital ni el cálculo del copago. Las expectativas autoritativas de hospital y
+> copago están en [docs/casos-de-prueba.md](../docs/casos-de-prueba.md); los valores
+> de `hospitalRecomendado` / `copagoFinal` de abajo se mantienen alineados con ese
+> documento.
 
 ---
 
@@ -22,8 +21,8 @@ Fuente: página de Notion "🤖 Prompts de Groq v2 (corregidos) + Guía de Prueb
 | # | Entrada (JSON para USER) | Qué se verifica |
 |---|---|---|
 | A1 | `{"especialidad":"Medicina General","plan":"Premium","hospitalRecomendado":"Hospital A","copagoFinal":0}` | Copago en $0 — que no suene roto decir "$0". |
-| A2 | `{"especialidad":"Cardiología","plan":"Básico","hospitalRecomendado":"Hospital A","copagoFinal":75}` | Copago alto en plan Básico — que lo comunique tal cual, sin suavizarlo. |
-| A3 | `{"especialidad":"Neumología","plan":"Básico","hospitalRecomendado":"Hospital C","copagoFinal":65.5}` | Decimal — que no redondee a 65 ni a 66. |
+| A2 | `{"especialidad":"Cardiología","plan":"Básico","hospitalRecomendado":"Hospital B","copagoFinal":65}` | Copago alto en plan Básico — que lo comunique tal cual, sin suavizarlo. |
+| A3 | `{"especialidad":"Neumología","plan":"Básico","hospitalRecomendado":"Hospital B","copagoFinal":57.50}` | Decimal — que no redondee a 57 ni a 58, ni recorte el `.50`. |
 | A4 | `{"especialidad":"Gastroenterología","plan":"Premium","hospitalRecomendado":"Hospital B","copagoFinal":30}` | Caso estándar de control. |
 
 ## Prompt B — faltan datos
