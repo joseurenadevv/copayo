@@ -20,9 +20,15 @@ precios. Un LLM no es confiable para aritmética con dinero real.
 1. Telegram        Trigger: llega el mensaje del paciente (síntoma + plan).
         │
         ▼
-2. n8n             Clasifica el síntoma (Groq lo mapea a un síntoma conocido) y
-                   valida que haya plan y especialidad. Si falta algo, responde
-                   pidiendo aclaración y termina (sin consultar hospitales ni calcular).
+2. n8n             Clasifica el síntoma por un diccionario de palabras clave en
+                   JavaScript (nodo "Function - Detectar Especialidad por
+                   Palabras Clave") — determinístico, SIN ningún LLM
+                   involucrado en la decisión de especialidad. Groq no
+                   interviene en este paso; entra recién en el paso 5, ya con
+                   la especialidad y el plan resueltos, solo para redactar el
+                   texto. Este paso también valida que haya plan y
+                   especialidad. Si falta algo, responde pidiendo aclaración y
+                   termina (sin consultar hospitales ni calcular).
         │
         ▼
 3. Notion          Lookups (filtrando por Especialidad tipo select):

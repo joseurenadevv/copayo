@@ -70,10 +70,10 @@ Salida: "Gracias por contarme. Para calcular tu copago exacto, ¿tu plan de segu
 
 ---
 
-## Nota de arquitectura (pendiente, otra rama)
+## Nota de arquitectura — resuelto (2026-09-05)
 
-El Prompt A todavía **no** recibe `sintomaOriginal` en su JSON de entrada (solo
-`especialidad`, `plan`, `hospitalRecomendado`, `copagoFinal`), por lo que su cláusula
-de EMERGENCIA es inalcanzable en la rama actual. El fix (pasar `sintomaOriginal`
-también al JSON de Prompt A) se está trabajando en otra rama de n8n y no forma parte
-de esta rama de prompts.
+El Prompt A recibe `sintomaOriginal` en su JSON de entrada (junto a `especialidad`,
+`plan`, `hospitalRecomendado`, `copagoFinal`). Su cláusula de EMERGENCIA es alcanzable
+y fue verificada en producción real el 2026-09-05: un mensaje de síntoma de emergencia
+disfrazado de calma ("...pero no es nada grave, tranquilo...") activó correctamente el
+protocolo, sin calcular copago ni recomendar hospital.
