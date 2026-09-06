@@ -27,7 +27,7 @@ Each top-level folder belongs to a different person on the 3-person team; respec
 - `/docs` — architecture, scope, test cases (shared, each person writes their own section)
 - `/n8n` — the exported `workflow.json` (owned by the repo maintainer)
 - `/prompts` — Groq system prompt and examples (owned by a teammate)
-- `/notion` — schema documentation only, **not** real data (owned by a teammate)
+- `/notion` — schema documentation **and** the full reference data of the 3 Notion bases (owned by a teammate). Exception to the "docs only" rule: the copago is deterministic and small, and the hackathon judges need to see the exact Síntomas/Hospitales/Planes values without Notion access, so `notion/schema.md` carries the complete data tables. Notion remains the source of truth; `schema.md` must be kept in sync with it.
 
 ## Deadline
 

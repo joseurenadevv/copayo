@@ -25,6 +25,16 @@ Opciones de `Especialidad` (idénticas en las 3 bases):
 Uso en el flujo: n8n busca el síntoma clasificado por Groq y obtiene su `Especialidad`
 para consultar la base de Hospitales.
 
+### Datos completos
+
+| Síntoma                  | Especialidad       |
+|--------------------------|--------------------|
+| dolor de pecho           | Cardiología        |
+| fiebre alta              | Medicina General   |
+| dolor abdominal          | Gastroenterología  |
+| fractura/trauma          | Traumatología      |
+| dificultad respiratoria  | Neumología         |
+
 ---
 
 ## Base 2 — Hospitales (15 filas = 3 hospitales × 5 especialidades)

@@ -19,12 +19,12 @@ Detalle en [docs/arquitectura.md](docs/arquitectura.md) y [docs/alcance.md](docs
 
 El MVP contempla:
 
-- 5 especialidades médicas:
-  - Medicina General
-  - Cardiología
-  - Gastroenterología
-  - Traumatología
-  - Neumología
+- 5 síntomas mapeados a 5 especialidades médicas:
+  - dolor de pecho → Cardiología
+  - fiebre alta → Medicina General
+  - dolor abdominal → Gastroenterología
+  - fractura/trauma → Traumatología
+  - dificultad respiratoria → Neumología
 - 3 hospitales ficticios con diferentes costos por especialidad.
 - 2 planes de seguro: Básico y Premium.
 - Reglas de copago específicas para cada combinación de plan y especialidad.
