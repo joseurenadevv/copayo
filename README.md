@@ -115,5 +115,5 @@ cp .env.example .env
 | Integrante | Rol |
 |---|---|
 | **Jose** | n8n / integración — workflow, lookups de Notion, nodo de cálculo, conexión con Groq y Telegram. |
-| **Euribiades** | Prompts / demo — system prompts de Groq (Redactar Respuesta y Pedir Aclaración) y guía de pruebas. |
+| **Euribiades** | Prompts — system prompts de Groq (Redactar Respuesta y Pedir Aclaración) y guía de pruebas. |
 | **Yassell** | Datos / pruebas — esquema y datos de las bases de Notion, casos de prueba. |
