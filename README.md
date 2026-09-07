@@ -43,13 +43,13 @@ El MVP contempla:
   - dificultad respiratoria → Neumología
 - **3 hospitales** ficticios (Hospital A, B, C) con distinto costo base por especialidad.
 - **2 planes** de seguro: Básico y Premium, con reglas de copago por combinación de plan y especialidad.
-- Datos estructurados en Notion, orquestación en n8n, clasificación de síntomas con un modelo de lenguaje y cálculo determinista del copago.
+- Datos estructurados en Notion, orquestación en n8n, clasificación del síntoma por coincidencia de palabras clave (keyword matching) en JavaScript dentro de n8n —determinística, sin LLM— y cálculo determinista del copago. Groq solo entra al final, para redactar la respuesta.
 
 Con los costos base reales, **Hospital B es el más económico en las 5 especialidades** (correcto por diseño; ver [notion/schema.md](notion/schema.md)).
 
 ### Limitaciones conocidas del MVP
 
-- Sin sesión ni memoria de conversación: cada mensaje se procesa desde cero. Si el bot pide una aclaración (falta especialidad o plan) y el paciente responde en un mensaje nuevo, esa respuesta se procesa como una consulta independiente, sin recordar la pregunta anterior. Es una decisión de scope, no un bug pendiente. (Se intentó implementar sesión con memoria el 2026-09-06; se revirtió por un hallazgo de seguridad en el flujo de emergencia — ver `HALLAZGO-5b-bug-estructural.md` en el Escritorio, no incluido en este repo.)
+- Sin sesión ni memoria de conversación: cada mensaje se procesa desde cero. Si el bot pide una aclaración (falta especialidad o plan) y el paciente responde en un mensaje nuevo, esa respuesta se procesa como una consulta independiente, sin recordar la pregunta anterior. Es una decisión de scope, no un bug pendiente. (Se intentó implementar sesión con memoria el 2026-09-06; se revirtió por un bug estructural en el flujo de emergencia — post-mortem en [docs/HALLAZGO-5b-bug-estructural.md](docs/HALLAZGO-5b-bug-estructural.md).)
 - No hace diagnóstico médico: solo clasifica dentro del conjunto de casos contemplados.
 - Ante un síntoma ambiguo o fuera de alcance, el sistema pide más información o informa que no puede procesar el caso, en lugar de inventar una especialidad, hospital o costo.
 
@@ -65,10 +65,11 @@ Reglas de copago por plan/especialidad y los 15 casos de prueba (flujo normal + 
 
 ## 💻 Guía de Comandos
 
+Para referencia técnica — así se reprodujo el entorno de desarrollo. El bot ya está desplegado y accesible en el link de arriba; estos pasos son solo para levantar una instancia propia.
+
 ### 1. Clonar el repositorio
 
 ```bash
-# Traer el código y entrar a la carpeta
 git clone https://github.com/joseurenadevv/copayo.git
 cd copayo
 ```
@@ -76,37 +77,26 @@ cd copayo
 ### 2. Configurar las variables de entorno
 
 ```bash
-# Copiar la plantilla y completar las 3 claves
 cp .env.example .env
-
-# .env debe quedar con:
-#   NOTION_API_KEY=...       token de integración de Notion con acceso a las 3 bases
-#   GROQ_API_KEY=...         API key de console.groq.com (modelo openai/gpt-oss-120b)
-#   TELEGRAM_BOT_TOKEN=...   token del bot creado con @BotFather
 ```
 
-### 3. Crear las 3 bases de Notion
+Completar `.env` con las 3 claves:
 
-```bash
-# Crear en Notion: Síntomas, Hospitales y Planes
-# con el esquema y los datos de notion/schema.md.
-# La propiedad "Especialidad" debe ser tipo SELECT en las 3 bases.
-```
+- `NOTION_API_KEY` — token de integración de Notion con acceso a las 3 bases
+- `GROQ_API_KEY` — API key de console.groq.com (modelo `openai/gpt-oss-120b`)
+- `TELEGRAM_BOT_TOKEN` — token del bot creado con @BotFather
 
-### 4. Crear el bot de Telegram
+### 3. Crear las 3 bases de Notion (manual, en la interfaz de Notion)
 
-```bash
-# En Telegram, hablar con @BotFather:
-#   /newbot  ->  seguir los pasos  ->  copiar el token a TELEGRAM_BOT_TOKEN
-```
+Crear las bases **Síntomas**, **Hospitales** y **Planes** con el esquema y los datos de [notion/schema.md](notion/schema.md). La propiedad `Especialidad` debe ser tipo **Select** en las 3 bases.
 
-### 5. Importar y activar el workflow en n8n
+### 4. Crear el bot de Telegram (manual, con @BotFather)
 
-```bash
-# En n8n: Workflows -> Import from File -> n8n/workflow-copago.json
-# Configurar las credenciales de Telegram, Notion y Groq en sus nodos.
-# Activar el workflow y escribirle al bot en Telegram.
-```
+En Telegram, hablar con **@BotFather** → `/newbot` → seguir los pasos → copiar el token a `TELEGRAM_BOT_TOKEN`.
+
+### 5. Importar y activar el workflow en n8n (manual, en la interfaz de n8n)
+
+En n8n: **Workflows → Import from File → `n8n/workflow-copago.json`**. Configurar las credenciales de Telegram, Notion y Groq en sus nodos, activar el workflow y escribirle al bot en Telegram.
 
 ---
 
@@ -115,5 +105,5 @@ cp .env.example .env
 | Integrante | Rol |
 |---|---|
 | **Jose** | n8n / integración — workflow, lookups de Notion, nodo de cálculo, conexión con Groq y Telegram. |
-| **Euribiades** | Prompts — system prompts de Groq (Redactar Respuesta y Pedir Aclaración) y guía de pruebas. |
-| **Yassell** | Datos / pruebas — esquema y datos de las bases de Notion, casos de prueba. |
+| **Euribiades** | Prompts / pruebas — versión inicial de los system prompts de Groq, corregidos por el equipo en la iteración v2. |
+| **Yassell** | Datos y verificación — aportó los datos de las 3 bases de Notion; corrió la verificación manual de los casos base contra el bot en producción (2026-09-06). |

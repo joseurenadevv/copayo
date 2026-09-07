@@ -16,8 +16,10 @@ El MVP contempla exactamente:
   (15 filas). Datos completos en [notion/schema.md](../notion/schema.md).
 - **2 planes** de seguro: Básico y Premium, con reglas de copago por
   (plan, especialidad) (10 filas).
-- Datos estructurados en Notion; orquestación en n8n; clasificación de síntomas con
-  Groq; **cálculo del copago determinístico en un nodo Code de n8n, nunca en el LLM**.
+- Datos estructurados en Notion; orquestación en n8n; **clasificación del síntoma por
+  coincidencia de palabras clave (keyword matching) en JavaScript dentro de n8n —
+  determinística, sin LLM**; **cálculo del copago determinístico en un nodo Code de
+  n8n, nunca en el LLM**. Groq solo interviene al final, para redactar la respuesta.
 - Canal: Telegram.
 
 ## Fuera de alcance (decisiones de scope, no bugs pendientes)

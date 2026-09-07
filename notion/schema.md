@@ -22,8 +22,10 @@ Opciones de `Especialidad` (idénticas en las 3 bases):
 | `Síntoma`     | Title  | Nombre del síntoma. |
 | `Especialidad`| Select | Una de las 5 opciones. Mapea el síntoma a la especialidad médica que lo atiende. |
 
-Uso en el flujo: n8n busca el síntoma clasificado por Groq y obtiene su `Especialidad`
-para consultar la base de Hospitales.
+Uso en el flujo: n8n clasifica el síntoma por coincidencia de palabras clave (keyword
+matching) en JavaScript —determinístico, sin LLM— para obtener su `Especialidad` y
+consultar la base de Hospitales. Groq no participa en esta clasificación; solo redacta
+la respuesta final.
 
 ### Datos completos
 

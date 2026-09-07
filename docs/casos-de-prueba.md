@@ -1,5 +1,5 @@
 # Casos de prueba
-Estos casos verifican la clasificación del síntoma, la selección del hospital más económico y el cálculo determinista del copago.
+Estos casos verifican la clasificación del síntoma, la selección del hospital más económico y —según el caso— el cálculo determinista del copago o el disparo del protocolo de emergencia (los casos 5, 9, 10 y 11 ejercitan la ruta de emergencia, no el cálculo).
 
 ## Reglas utilizadas
 
@@ -39,14 +39,14 @@ Estos casos verifican la clasificación del síntoma, la selección del hospital
 | 14 | “Me siento mal y muy cansado, tengo plan Básico” | **Especialidad no determinada → pedir más información; no consultar hospitales ni calcular** | — |
 | 15 | “Me siento mal” | **Faltan plan y especialidad → pedir ambos datos; no consultar hospitales ni calcular** | — |
 
-Los 9 casos marcados como verificados fueron ejecutados manualmente contra el bot en
-producción por Yassell el 2026-09-06, **contra el workflow backup sin memoria de
-sesión** (la versión que corre producción; ver `HALLAZGO-5b-bug-estructural.md` en el
-Escritorio, no incluido en este repo, para el intento de memoria revertido). Los casos
-2, 4, 7, 8 y 12 coincidieron con el resultado esperado; los casos 9, 10 y 11 cambiaron
-de resultado esperado según la evidencia real (ver más abajo); el caso 5 resultó ser
-no determinístico (dispara emergencia en la mayoría de las corridas observadas — ver
-su fila y la nota sobre Neumología y emergencia más abajo).
+Los 9 casos marcados como verificados fueron corridos manualmente por Yassell en
+Telegram el 2026-09-06, **contra el workflow backup sin memoria de sesión** (la versión
+que corre producción; ver [HALLAZGO-5b-bug-estructural.md](HALLAZGO-5b-bug-estructural.md)
+para el intento de memoria revertido). Los casos 2, 4, 7, 8 y 12 coincidieron con el
+resultado esperado; los casos 9, 10 y 11 cambiaron de resultado esperado según la
+evidencia real (ver más abajo); el caso 5 resultó ser no determinístico (dispara
+emergencia en la mayoría de las corridas observadas — ver su fila y la nota sobre
+Neumología y emergencia más abajo).
 
 > **Nota sobre el hospital ganador (correcto por diseño, no un error de datos).**
 > Con los costos base reales cargados en Notion, **Hospital B es el más económico en
@@ -62,9 +62,9 @@ su fila y la nota sobre Neumología y emergencia más abajo).
 
 ### Nota sobre Neumología y el protocolo de emergencia
 
-Verificado el 2026-09-06 contra el bot en producción por Yassell (contra el workflow
-sin memoria de sesión; ver `HALLAZGO-5b-bug-estructural.md` en el Escritorio, no
-incluido en este repo, para el caso con memoria, revertido):
+Corrido manualmente por Yassell en Telegram el 2026-09-06, contra el workflow backup
+sin memoria de sesión (ver [HALLAZGO-5b-bug-estructural.md](HALLAZGO-5b-bug-estructural.md)
+para el caso con memoria, revertido):
 
 - La **única frase de síntoma del sistema para Neumología es "dificultad respiratoria"**,
   y esa frase **dispara el protocolo de emergencia de forma consistente** en las
@@ -108,7 +108,7 @@ Mientras no exista un plan válido:
 
 **Resultado esperado:**
 
-El sistema no debe asignar automáticamente una especialidad. Groq debe solicitar información adicional para poder clasificar el caso.
+El sistema no debe asignar automáticamente una especialidad: si el keyword matching no encuentra ninguna coincidencia, el flujo va a la rama de aclaración y Groq redacta una petición de más información (sin inventar una especialidad).
 
 Mientras no exista una especialidad válida:
 

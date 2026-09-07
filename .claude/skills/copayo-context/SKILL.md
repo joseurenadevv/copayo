@@ -31,7 +31,9 @@ Telegram Trigger → Notion (lookup) → Function/Code (cálculo determinístico
 /docs      — arquitectura, alcance, casos de prueba (transversal)
 /n8n       — export del workflow.json (mío)
 /prompts   — system prompt de Groq (compañero 2)
-/notion    — documentación del esquema, NO datos reales (compañero 3)
+/notion    — documentación del esquema Y los datos completos de las 3 bases
+             (excepción documentada en CLAUDE.md: el jurado necesita ver los
+             valores sin acceso a Notion) (compañero 3)
 
 ## Deadline
 Domingo 6 de septiembre de 2026. Entrega: link del bot + link del repo a 

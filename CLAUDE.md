@@ -8,7 +8,7 @@ Copayo is a hackathon project: a conversational agent (via Telegram) that estima
 
 Stack: n8n (workflow orchestration, self-hosted VPS) + Notion API (data store) + Groq (LLM, `openai/gpt-oss-120b`) + Telegram Bot API (channel).
 
-The repo currently holds scaffolding only — docs, prompt files, and folders for the n8n workflow export and Notion schema — no application code yet. There are no build/lint/test commands because there is nothing to build: the actual logic lives in an n8n workflow (exported as JSON into `/n8n`), not in a codebase run locally.
+The repo holds the delivered MVP: the exported n8n workflow (`n8n/workflow-copago.json`), the full Notion schema and reference data (`notion/schema.md`), the two Groq system prompts and their test guide (`prompts/`), the project docs (`docs/`), and a tagged release. There are no build/lint/test commands because there is nothing to build: the runtime logic lives in the n8n workflow, not in a codebase run locally.
 
 ## Non-negotiable architecture rule
 
