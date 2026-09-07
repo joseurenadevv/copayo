@@ -1,7 +1,6 @@
 ---
 name: copayo-context
-description: Contexto y reglas fijas del proyecto Copayo — úsala siempre 
-que trabajes en este repo.
+description: "Contexto y reglas fijas del proyecto Copayo — úsala siempre que trabajes en este repo."
 ---
 
 # Copayo — Estimador Agéntico de Copago y Cobertura
